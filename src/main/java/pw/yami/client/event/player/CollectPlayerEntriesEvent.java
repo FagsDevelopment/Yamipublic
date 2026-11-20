@@ -1,0 +1,18 @@
+package pw.yami.client.event.player;
+
+import pw.yami.client.api.UnidentifiedInterface2;
+import pw.yami.client.event.Event;
+
+@UnidentifiedInterface2
+public class CollectPlayerEntriesEvent extends Event {
+   private int a;
+   public static boolean eh;
+
+   public int Au() {
+      return this.a;
+   }
+
+   public void Av(int n) {
+      this.a = n;
+   }
+}
