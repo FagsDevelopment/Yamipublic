@@ -1,0 +1,35 @@
+build/
+.gradle/
+.idea/
+*.iml
+out/
+run/
+logs/
+crash-reports/
+hs_err_pid*.log
+src/test/
+
+# Yami license system - secrets and local state
+license-system/.env
+license-system/keys/*_private.pem
+license-system/keys/*_private.b64
+license-system/data/
+license-system/.venv/
+license-system/**/__pycache__/
+license-system/.pytest_cache/
+license-system/dist/
+license-system/update/
+*.db
+*.db-wal
+*.db-shm
+
+# Nested and input folders
+OpenHachimi-main/
+donenfags/
+fags totem/
+src/main/java/pw/hachimi/
+
+license-system/
+publish-update.ps1
+Yayinla.ps1
+

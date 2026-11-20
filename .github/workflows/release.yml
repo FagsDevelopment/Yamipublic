@@ -1,0 +1,112 @@
+name: Build and publish Yami update
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yami-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install signing dependency
+        run: python -m pip install --quiet cryptography
+
+      - name: Locate or build jar
+        id: jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR=""
+          if [ -d dist ]; then
+            JAR=$(find dist -maxdepth 1 -type f -name '*.jar' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2- || true)
+          fi
+          if [ -z "$JAR" ]; then
+            JAR=$(find . -maxdepth 4 -type f -name '*.jar' \
+              ! -path './.git/*' ! -path './.gradle/*' ! -path './build/*' ! -path './gradle/*' \
+              -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2- || true)
+          fi
+          if [ -z "$JAR" ]; then
+            echo "Jar bulunamadi, kaynaktan derleniyor..."
+            chmod +x gradlew
+            ./gradlew build --no-daemon
+            JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' \
+              ! -name '*-sources.jar' ! -name '*-dev.jar' -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)
+          fi
+          if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
+            echo "::error::Ne yuklenmis bir jar ne de derlenmis bir jar bulundu."
+            exit 1
+          fi
+          echo "jar=$JAR" >> "$GITHUB_OUTPUT"
+          echo "Secilen jar: $JAR"
+
+      - name: Sign jar and build update manifest
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY_PATH="$RUNNER_TEMP/update_private.pem"
+          if [ -n "${UPDATE_SIGNING_KEY:-}" ]; then
+            printf '%s' "$UPDATE_SIGNING_KEY" > "$KEY_PATH"
+          elif [ -f "license-system/keys/update_private.pem" ]; then
+            cp "license-system/keys/update_private.pem" "$KEY_PATH"
+          else
+            cat << 'EOF' > "$KEY_PATH"
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIOXU6Y+/osLLbRJN/GPZ13ZDffXll+snNHW/l+zRmlwk
+-----END PRIVATE KEY-----
+EOF
+          fi
+          SIGNER="license-system/tools/sign_release.py"
+          if [ ! -f "$SIGNER" ]; then
+            SIGNER="tools/sign_release.py"
+          fi
+          python "$SIGNER" \
+            --jar "${{ steps.jar.outputs.jar }}" \
+            --key "$KEY_PATH" \
+            --output-dir dist \
+            --channel "${YAMI_UPDATE_CHANNEL:-stable}"
+          rm -f "$KEY_PATH"
+          echo "---- update.json ----"
+          cat dist/update.json
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(python -c "import json;print(json.load(open('dist/update.json'))['version'])")
+          JARNAME=$(python -c "import json;print(json.load(open('dist/update.json'))['jar'])")
+          TAG="v${VERSION}"
+          NOTES="dist/release-notes.md"
+          FILES=("dist/${JARNAME}" "dist/${JARNAME}.sha256" "dist/${JARNAME}.sig" "dist/update.json")
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${FILES[@]}" --clobber
+            gh release edit "$TAG" --title "Yami ${TAG}" --notes-file "$NOTES" --latest
+          else
+            gh release create "$TAG" "${FILES[@]}" --title "Yami ${TAG}" --notes-file "$NOTES" --latest
+          fi
+          echo "Yayinlandi: $TAG"

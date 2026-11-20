@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "yami",
+  "version": "${version}",
+  "name": "Yami",
+  "description": ":)",
+  "environment": "client",
+  "entrypoints": {
+    "preLaunch": [
+      "pw.yami.client.loader.SecureBoot",
+      "pw.yami.client.license.UpdateApplier"
+    ]
+  },
+  "mixins": [
+    "mixins.yamiclient.json"
+  ],
+  "accessWidener": "yami.accesswidener",
+  "depends": {
+    "java": ">=21",
+    "fabricloader": ">=0.15.11",
+    "minecraft": ">=1.21 <=1.21.1",
+    "fabric-api": ">=0.102.0"
+  }
+}

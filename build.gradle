@@ -1,0 +1,177 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.5.0'
+    }
+}
+
+plugins {
+    id 'fabric-loom' version '1.16.3'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/yami.accesswidener')
+}
+
+sourceSets {
+    main {
+        java {
+            // Eski/referans pw.hachimi kaynak agaci build'e dahil edilmesin; aktif kod pw.yami.
+            exclude 'pw/hachimi/**'
+        }
+    }
+    stubs {
+        java.srcDir 'src/stubs/java'
+    }
+}
+
+dependencies {
+    compileOnly sourceSets.stubs.output
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    compileOnly 'io.github.llamalad7:mixinextras-common:0.4.1'
+    annotationProcessor 'io.github.llamalad7:mixinextras-common:0.4.1'
+    implementation 'javazoom:jlayer:1.0.1'
+    include 'javazoom:jlayer:1.0.1'
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xmaxerrs', '100000', '-Xmaxwarns', '10']
+    if (System.getenv('JAVAC_ALL_ERRORS')) {
+        options.compilerArgs += ['-XDshould-stop.ifError=FLOW']
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': inputs.properties.version
+    }
+}
+
+def classpathOut = { String name ->
+    def dir = project.findProperty('classpathDir')
+    dir ? file("${rootProject.projectDir}/${dir}/${name}") : layout.buildDirectory.file(name).get().asFile
+}
+
+tasks.register('printTestClasspath') {
+    dependsOn 'testClasses'
+    doLast {
+        classpathOut('test-classpath.txt').text = sourceSets.test.runtimeClasspath.files.join(File.pathSeparator)
+    }
+}
+
+tasks.register('printClasspath') {
+    doLast {
+        classpathOut('compile-classpath.txt').text = sourceSets.main.compileClasspath.files.join(File.pathSeparator)
+    }
+}
+
+// Her basarili build sonrasi uretilen mod jar'ini PrismLauncher mods klasorune kopyala.
+// Varsayilan olarak kapali; yerel kopyalama icin: gradlew build -PcopyToPrism
+def prismModsDir = project.findProperty('prismModsDir') ?: 'C:/Users/imo34/AppData/Roaming/PrismLauncher/instances/fakeamcimi/minecraft/mods'
+def copyToPrism = project.hasProperty('copyToPrism')
+
+tasks.named('remapJar') {
+    doLast {
+        if (!copyToPrism) {
+            return
+        }
+        def destDir = file(prismModsDir)
+        destDir.mkdirs()
+
+        def jarFile = archiveFile.get().asFile
+
+        // Ayni modun eski jar'lari kalirsa Fabric Loader duplicate mod hatasi verir
+        destDir.listFiles()?.findAll { it.name ==~ /(Open)?Yami-.*\.jar/ }?.each { it.delete() }
+
+        try {
+            copy {
+                from jarFile
+                into destDir
+            }
+            logger.lifecycle("Mod jar kopyalandi: ${new File(destDir, jarFile.name)}")
+        } catch (Exception e) {
+            logger.warn("Mod jar kopyalanamadi (Minecraft acik olabilir): ${e.message}")
+        }
+    }
+}
+
+import obf.ObfuscateTask
+
+tasks.register('obfuscateJar', ObfuscateTask) {
+    dependsOn tasks.named('remapJar')
+
+    def remapJarTask = tasks.named('remapJar').get()
+    inputJar.set(remapJarTask.outputs.files.singleFile)
+    def obfOutput = layout.buildDirectory.file("libs/${project.archives_base_name}-${project.version}-obf.jar")
+    outputJar.set(obfOutput)
+    classpath.from(configurations.compileClasspath)
+
+    doLast {
+        def outJar = obfOutput.get().asFile
+        def mainJar = remapJarTask.outputs.files.singleFile
+
+        logger.lifecycle("=== YAMI TITANIUM OBFUSCATION COMPLETED ===")
+        logger.lifecycle("Obfuscated Jar: ${outJar.absolutePath}")
+
+        // Ana jar dosyasinin uzerine yaz
+        copy {
+            from outJar
+            into mainJar.parentFile
+            rename { mainJar.name }
+        }
+
+        // PrismLauncher mod klasorune kopyala
+        def prismDir = file('C:/Users/imo34/AppData/Roaming/PrismLauncher/instances/fakeamcimi/minecraft/mods')
+        if (prismDir.exists()) {
+            prismDir.listFiles()?.findAll { it.name ==~ /(Open)?Yami-.*\.jar/ }?.each { it.delete() }
+            copy {
+                from outJar
+                into prismDir
+                rename '.*', mainJar.name
+            }
+            logger.lifecycle("Obf jar PrismLauncher'a yuklendi: ${mainJar.name}")
+        }
+    }
+}
+
+tasks.register('obfuscate') {
+    dependsOn 'obfuscateJar'
+}
+
+tasks.register('buildObf') {
+    dependsOn 'obfuscateJar'
+    group = 'build'
+    description = 'Obfuscated & Encrypted Multi-Chunk JAR uretir'
+}
