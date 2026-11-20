@@ -17,7 +17,7 @@ import java.util.jar.*;
 import java.util.zip.*;
 
 /**
- * BestHunt Obfuscator v4.0 Ultimate
+ * Obfuscator
  *
  * [FIX 1] Anti-Reflection & Caller Class Verification in Inline Decryptors:
  *         Detects reflection (Method.invoke, jdk.internal.reflect) and external callers.
@@ -74,7 +74,7 @@ public class Obfuscator {
     }
 
     public void process(File inputJar, File outputJar, List<File> classpathFiles) throws Exception {
-        System.out.println("[Obfuscator] v4.0 Ultimate — " + inputJar.getName());
+        System.out.println("[Obfuscator] Giris: " + inputJar.getName());
 
         Map<String, byte[]> classes = new LinkedHashMap<>();
         Map<String, byte[]> resources = new LinkedHashMap<>();
@@ -1465,7 +1465,7 @@ public class Obfuscator {
 
     private void printStats(File out) {
         System.out.println("[Obfuscator] ═══════════════════════════════════════════");
-        System.out.println("[Obfuscator] v4.0 Ultimate Tamamlandı: " + out.getName());
+        System.out.println("[Obfuscator] Tamamlandı: " + out.getName());
         System.out.println("[Obfuscator] String şifreleme:      " + stringsEncrypted + " (Anti-reflection & caller check)");
         System.out.println("[Obfuscator] Sayı kodlama:          " + numbersEncoded + " (Anti-constant-folding runtime)");
         System.out.println("[Obfuscator] Junk üyeler:           " + junkAdded);

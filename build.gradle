@@ -142,7 +142,7 @@ tasks.register('obfuscateJar', ObfuscateTask) {
         def outJar = obfOutput.get().asFile
         def mainJar = remapJarTask.outputs.files.singleFile
 
-        logger.lifecycle("=== YAMI TITANIUM OBFUSCATION COMPLETED ===")
+        logger.lifecycle("=== OBFUSCATION COMPLETED ===")
         logger.lifecycle("Obfuscated Jar: ${outJar.absolutePath}")
 
         // Ana jar dosyasinin uzerine yaz

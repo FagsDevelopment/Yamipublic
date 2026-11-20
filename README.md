@@ -2,6 +2,12 @@
 
 A high-performance Fabric client mod for Minecraft 1.21.1.
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20Us-5865F2?logo=discord&logoColor=white)](https://discord.gg/E3ay6BAQTZ)
+
+## Community
+
+Join our official Discord: [https://discord.gg/E3ay6BAQTZ](https://discord.gg/E3ay6BAQTZ)
+
 ## Requirements
 
 - **Java Development Kit (JDK) 21** or newer
@@ -11,21 +17,12 @@ A high-performance Fabric client mod for Minecraft 1.21.1.
 
 Clone the repository and build with Gradle:
 
-### Standard Build
-
 ```bash
 # Linux / macOS
 ./gradlew build
 
 # Windows
 .\gradlew.bat build
-```
-
-### Obfuscated Production Build
-
-```bash
-# Windows
-.\gradlew.bat obfuscateJar build
 ```
 
 The compiled mod JAR will be generated in:

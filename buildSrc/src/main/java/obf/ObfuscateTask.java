@@ -30,7 +30,13 @@ public abstract class ObfuscateTask extends DefaultTask {
         File output = getOutputJar().get().getAsFile();
 
         getLogger().lifecycle("══════════════════════════════════════════════");
-        getLogger().lifecycle("  Yami Titanium Obfuscator v2.0");
+        getLogger().lifecycle("   ███████╗ █████╗  ██████╗ ███████╗");
+        getLogger().lifecycle("   ██╔════╝██╔══██╗██╔════╝ ██╔════╝");
+        getLogger().lifecycle("   █████╗  ███████║██║  ███╗███████╗");
+        getLogger().lifecycle("   ██╔══╝  ██╔══██║██║   ██║╚════██║");
+        getLogger().lifecycle("   ██║     ██║  ██║╚██████╔╝███████║");
+        getLogger().lifecycle("   ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝");
+        getLogger().lifecycle("                OBFUSCATOR          ");
         getLogger().lifecycle("  Giris:  " + input.getName());
         getLogger().lifecycle("  Cikis:  " + output.getName());
         getLogger().lifecycle("══════════════════════════════════════════════");
