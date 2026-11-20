@@ -1,29 +1,47 @@
-<p align="center">
-  <img src="docs/logo.png" alt="OpenYami" width="560">
-</p>
+# Yami Client
 
-<h1 align="center">
-  <img src="docs/title.png" alt="OpenYami" width="560">
-</h1>
+A high-performance Fabric client mod for Minecraft 1.21.1.
 
-A readable source reconstruction of the Yami V2 client: a client-side Fabric mod for Minecraft 1.21.1 (Yarn mappings, Mixin, access widener).
+## Requirements
 
-The sources were recovered from the protected `Yami-V2-crack.jar` by bytecode deobfuscation and decompilation, so they are a reconstruction, not the original repository. Most class, field and method names are inferred from what the code does and are not the original names. Behaviour was checked by launching the client in a development environment and toggling all 176 modules in a singleplayer world; it was not compared against the original jar. The recovery pipeline, the remaining gaps and the evidence live in the parent workspace (`ACCEPTANCE.md`, `SCOPE.md`).
+- **Java Development Kit (JDK) 21** or newer
+- Fabric Loader for Minecraft 1.21.1
 
-## Build and run
+## Building
 
-Requires JDK 21 or newer (JDK 25 is what the project is built with) and network access to Maven Central and `maven.fabricmc.net` for Minecraft, Yarn, Fabric and the test dependencies.
+Clone the repository and build with Gradle:
 
+### Standard Build
+
+```bash
+# Linux / macOS
+./gradlew build
+
+# Windows
+.\gradlew.bat build
 ```
-./gradlew build       # build/libs/OpenYami-2.0.jar (remapped, for Fabric Loader), build/devlibs/OpenYami-2.0-dev.jar (Yarn names)
-./gradlew test
-./gradlew runClient   # starts the client with the working directory run/
+
+### Obfuscated Production Build
+
+```bash
+# Windows
+.\gradlew.bat obfuscateJar build
 ```
 
-On Windows use `gradlew.bat`. The bytecode target is Java 21 (`--release 21`).
+The compiled mod JAR will be generated in:
+- `build/libs/`
 
-IntelliJ IDEA: `File > Open` and select this directory, import it as a Gradle project and set the Gradle JVM to JDK 21 or newer. Loom downloads and maps Minecraft on the first import (slow) and generates the **Minecraft Client** run configuration; its working directory is `run/`. The `.idea/` directory is generated, so it is not meant to be committed.
+## Development
 
-Gradle's test worker cannot start when the project path contains non-ASCII characters, so run `./gradlew build` from an ASCII-only path.
+To run the client in a development environment:
 
-[![QQ Group 1078719379](https://img.shields.io/badge/QQ%20Group-1078719379-12B7F5?logo=tencentqq&logoColor=white)](https://qm.qq.com/q/OnrCkjX7Y4)
+```bash
+.\gradlew.bat runClient
+```
+
+### IDE Setup (IntelliJ IDEA)
+
+1. Open the project folder in IntelliJ IDEA as a Gradle project.
+2. Ensure the Gradle JVM is configured to **JDK 21** or newer.
+3. Allow Loom to finish importing and generating the Minecraft run configurations.
+4. Launch via the generated **Minecraft Client** run configuration.
